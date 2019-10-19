@@ -34,9 +34,6 @@ def sendData(data):
         tcp_client.sendall(bytes(data + "\n" , "ASCII"))
 
         received = tcp_client.recv(1024)
-
-         
-        # TODO do i need error handling for missed response? 
     finally:
         tcp_client.close()
     print("sent : {}".format(data))
