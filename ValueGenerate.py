@@ -9,19 +9,32 @@ from Velocity import Velocity
 class options():
     def __init__(self):
         parser = argparse.ArgumentParser(description='creates and publishes position data')
-        parser.add_argument('--host', dest='host', type=str, 
+        parser.add_argument('--host', dest='host', default= "127.0.0.1", type=str, 
         nargs='?', help='Host IP address that data will be received')
-        parser.add_argument('--port', '-p', dest='port', type=int, 
+        parser.add_argument('--port', '-p', dest='port', default=9999, type=int, 
+        nargs='?', help='Host port that data will be received')
+        parser.add_argument('--initialX','-x', dest='x', default=0.0, type=float, 
+        nargs='?', help='Host port that data will be received')
+        parser.add_argument('--initialY','-y', dest='y', default=0.0, type=float, 
+        nargs='?', help='Host port that data will be received')
+        parser.add_argument('--initialZ','-z', dest='z', default=0.0, type=float, 
+        nargs='?', help='Host port that data will be received')
+        parser.add_argument('--velocityX','-vx', dest='velX', default=0.0, type=float, 
+        nargs='?', help='Host port that data will be received')
+        parser.add_argument('--velocityY','-vy', dest='velY', default=0.0, type=float, 
+        nargs='?', help='Host port that data will be received')
+        parser.add_argument('--velocityZ','-vz', dest='velZ', default=0.0, type=float, 
         nargs='?', help='Host port that data will be received')
         args = parser.parse_args()
-        if args.host:
-            self.host = args.host
-        else:
-            self.host = "127.0.0.1"
-        if args.port:
-            self.port = args.port
-        else:
-            self.port = 9999
+        self.host = args.host
+        self.port = args.port
+        self.x = args.x
+        self.y = args.y
+        self.z = args.z
+        self.velX = args.velX
+        self.velY = args.velY
+        self.velZ = args.velZ
+
 
 
 def sendData(data, host, port):
@@ -42,8 +55,8 @@ def sendData(data, host, port):
 
 def simulatePosition():
     inputArgs = options()
-    initPosition = Position(1, 0, 0, 0)
-    initVelocity = Velocity(1,0,0) 
+    initPosition = Position(inputArgs.x, inputArgs.y, inputArgs.z, 0)
+    initVelocity = Velocity(inputArgs.velX, inputArgs.velY, inputArgs.velZ) 
     startTime = initPosition.time
     endTime = 20
     newPosition = initPosition
@@ -52,11 +65,19 @@ def simulatePosition():
 
         # Predict next position
         timeDelta = time - initPosition.time
-        xNoise = random.uniform(-.3, .3)
-        yNoise = random.uniform(-.3, .3)
-        zNoise = random.uniform(-.3, .3)
+        NoiseRange = 0.1 # set default noiseRange
+        # SetNoise to % of the velocity
+        if initVelocity.x > 0.0:
+            NoiseRange = initVelocity.x * 0.1 
+        xNoise = random.uniform(NoiseRange * -1, NoiseRange)
         newPosition.x = initPosition.x + initVelocity.x * timeDelta + xNoise
+        if initVelocity.y > 0.0:
+            NoiseRange = initVelocity.y * 0.1 
+        yNoise = random.uniform(NoiseRange * -1, NoiseRange)
         newPosition.y = initPosition.y + initVelocity.y * timeDelta + yNoise
+        if initVelocity.z > 0.0:
+            NoiseRange = initVelocity.z * 0.1 
+        zNoise = random.uniform(NoiseRange * -1, NoiseRange)
         newPosition.z = initPosition.z + initVelocity.z * timeDelta + zNoise
         newPosition.time = initPosition.time + timeDelta 
         print("position x = %s y = %s z = %s at time = %s" %(newPosition.x,
