@@ -1,31 +1,31 @@
 #! /usr/bin/env python
 import argparse
 import socket
+import random
+from Position import Position
+from Velocity import Velocity
 
 
 class options():
     def __init__(self):
         parser = argparse.ArgumentParser(description='creates and publishes position data')
-        parser.add_argument('--inputData', dest='inputData', type=str, 
-                            nargs='?', help='input file to drive valueGeneration')
+        parser.add_argument('--host', dest='host', type=str, 
+        nargs='?', help='Host IP address that data will be received')
+        parser.add_argument('--port', '-p', dest='port', type=int, 
+        nargs='?', help='Host port that data will be received')
         args = parser.parse_args()
-        self.inputText = args.inputData
+        if args.host:
+            self.host = args.host
+        else:
+            self.host = "127.0.0.1"
+        if args.port:
+            self.port = args.port
+        else:
+            self.port = 9999
 
-class position:
-    def __init__(self, x, y, z, time):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.time = time
 
-class velocity:
-    def __init__(self, velocityX, velocityY, velocityZ):
-        self.x = velocityX
-        self.y = velocityY
-        self.z = velocityZ
-
-def sendData(data):
-    host_ip, server_port = "127.0.0.1", 9999
+def sendData(data, host, port):
+    host_ip, server_port = host, port
     # Establish connection
     tcp_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
@@ -40,30 +40,32 @@ def sendData(data):
     print("received: {}".format(received.decode))
 
 
-def main():
-    # TODO input args for host/port
+def simulatePosition():
     inputArgs = options()
-    initPosition = position(1, 0, 0, 0)
-    initVelocity = velocity(1,0,0) 
+    initPosition = Position(1, 0, 0, 0)
+    initVelocity = Velocity(1,0,0) 
     startTime = initPosition.time
-    endTime = 10
+    endTime = 20
     newPosition = initPosition
 
     for time in range(startTime, endTime):
+
+        # Predict next position
         timeDelta = time - initPosition.time
-        newPosition.x = initPosition.x + initVelocity.x * timeDelta 
-        newPosition.y = initPosition.y + initVelocity.y * timeDelta 
-        newPosition.z = initPosition.z + initVelocity.z * timeDelta 
+        xNoise = random.uniform(-.3, .3)
+        yNoise = random.uniform(-.3, .3)
+        zNoise = random.uniform(-.3, .3)
+        newPosition.x = initPosition.x + initVelocity.x * timeDelta + xNoise
+        newPosition.y = initPosition.y + initVelocity.y * timeDelta + yNoise
+        newPosition.z = initPosition.z + initVelocity.z * timeDelta + zNoise
         newPosition.time = initPosition.time + timeDelta 
         print("position x = %s y = %s z = %s at time = %s" %(newPosition.x,
                                                  newPosition.y, newPosition.z, 
                                                  newPosition.time))
-        # TODO create convert class attributes to string method
-        data = str(newPosition.x) + " " + str(newPosition.y) + " " + \
-                str(newPosition.z) + " " + str(newPosition.time)
+        
         # Publish position data via TCP
-        sendData(data)
+        sendData(str(newPosition), inputArgs.host, inputArgs.port)
         initPosition = newPosition
 
 if __name__ == "__main__":
-    main()
+    simulatePosition()
